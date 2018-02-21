@@ -11,6 +11,35 @@ using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
 class UKF {
+
+private:
+
+  int n_z_radar = 3;
+  int n_z_laser = 2;
+
+  long previous_timestamp_;
+
+  VectorXd _last_NIS;
+
+
+  void GenerateSigmaPoints(MatrixXd* Xsig_out, const VectorXd &x, const MatrixXd &P);
+
+  void set_weights();
+
+  void AugmentedSigmaPoints();
+  void SigmaPointPrediction(const double &delta_t);
+  void PredictMeanAndCovariance();
+
+  // Radar
+  void PredictRadarMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Zsig_out);
+  void UpdateRadarState(const VectorXd &z);
+
+  // Lidar
+  void PredictLaserMeasurement(VectorXd* z_out, MatrixXd* S_out, MatrixXd* Zsig_out);
+  void UpdateLaserState(const VectorXd &z);
+
+  void UpdateNIS(const MatrixXd &S, const VectorXd &z_residual);
+
 public:
 
   ///* initially set to false, set to true in first call of ProcessMeasurement
@@ -27,6 +56,16 @@ public:
 
   ///* state covariance matrix
   MatrixXd P_;
+
+  ///* measurement covariance matrix
+  MatrixXd R_radar_;
+  MatrixXd R_laser_;
+
+  ///* measurement matrix
+  MatrixXd H_laser_;
+
+  ///* augmented sigma points matrix
+  MatrixXd Xsig_aug_;
 
   ///* predicted sigma points matrix
   MatrixXd Xsig_pred_;
@@ -82,14 +121,14 @@ public:
    * ProcessMeasurement
    * @param meas_package The latest measurement data of either radar or laser
    */
-  void ProcessMeasurement(MeasurementPackage meas_package);
+  void ProcessMeasurement(MeasurementPackage measurement_pack);
 
   /**
    * Prediction Predicts sigma points, the state, and the state covariance
    * matrix
    * @param delta_t Time between k and k+1 in s
    */
-  void Prediction(double delta_t);
+  void Prediction(const double &delta_t);
 
   /**
    * Updates the state and the state covariance matrix using a laser measurement
